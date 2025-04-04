@@ -1,0 +1,68 @@
+/* ===== TICKER PITCHFORK COM VELOCIDADE REDUZIDA ===== */
+.footer-news-ticker {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(5px);
+    padding: 14px 0;
+    border-top: 1px solid #333;
+    z-index: 1000;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+
+.ticker-container {
+    display: flex;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.ticker-label {
+    background: #000;
+    color: #ff5500;
+    padding: 8px 20px;
+    margin-right: 25px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.ticker-content {
+    white-space: nowrap;
+    animation: ticker 120s linear infinite; /* Aumentei de 40s para 120s */
+    padding: 5px 0;
+    display: inline-block;
+}
+
+.ticker-item {
+    display: inline-block;
+    margin-right: 60px;
+    font-size: 1.3rem;
+    white-space: nowrap;
+}
+
+.ticker-item a {
+    color: #fff;
+    text-decoration: none;
+    transition: all 0.3s;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.ticker-item a:hover {
+    color: #ff5500;
+}
+
+@keyframes ticker {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+}
+
+/* Ajuste de espaçamento */
+body.public-page {
+    padding-bottom: 70px !important;
+}
