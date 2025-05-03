@@ -1,4 +1,4 @@
-/* ===== TICKER PITCHFORK COM VELOCIDADE REDUZIDA ===== */
+/* ===== BASE STYLES ===== */
 .footer-news-ticker {
     position: fixed;
     bottom: 0;
@@ -33,7 +33,7 @@
 
 .ticker-content {
     white-space: nowrap;
-    animation: ticker 120s linear infinite; /* Aumentei de 40s para 120s */
+    animation: ticker linear infinite;
     padding: 5px 0;
     display: inline-block;
 }
@@ -55,6 +55,23 @@
 
 .ticker-item a:hover {
     color: #ff5500;
+}
+
+/* Weather specific styles */
+.ticker-item.weather {
+    display: inline-flex;
+    align-items: center;
+}
+
+.weather-icon {
+    margin-right: 8px;
+    width: 20px;
+    height: 20px;
+}
+
+/* Twitter specific styles */
+.ticker-item.tweet {
+    color: #1da1f2;
 }
 
 @keyframes ticker {
