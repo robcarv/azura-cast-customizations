@@ -57,14 +57,10 @@ Feito para a rádio **Dublin Calling** (rodando em Raspberry Pi 5 com Docker).
 ```bash
 # Conectar no container
 docker exec -it azuracast php -r '
-$pdo = new PDO("mysql:host=127.0.0.1;port=3306;dbname=azuracast", "azuracast", getenv("MYSQL_PASSWORD"));
+$pdo = new PDO("mysql:host=127.0.0.1;port=3306;dbname=azuracast", "azuracast", "sua_senha_aqui");
 $stmt = $pdo->query("SELECT branding_config FROM station WHERE short_name=\"dublincalling\"");
 $config = json_decode($stmt->fetch()["branding_config"], true);
-
-// Atualizar CSS
 $config["public_custom_css"] = file_get_contents("/tmp/novo_css.css");
-
-// Salvar
 $update = $pdo->prepare("UPDATE station SET branding_config = ? WHERE short_name = \"dublincalling\"");
 $update->execute([json_encode($config)]);
 '
