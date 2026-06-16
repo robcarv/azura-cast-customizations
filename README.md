@@ -1,143 +1,51 @@
 # AzuraCast Customizations
 
-Customizações visuais e funcionais para a public page do AzuraCast.
-Feito para a rádio **Dublin Calling** (rodando em Raspberry Pi 5 com Docker).
+Visual and functional customizations for the AzuraCast public page.
+Designed for **Dublin Calling** radio station, running on Raspberry Pi 5 with Docker.
 
-> **Repositório público**: [github.com/robcarv/azura-cast-customizations](https://github.com/robcarv/azura-cast-customizations)
-
----
-
-## Funcionalidades
-
-### v3.0 (Atual)
-- **Glassmorphism**: Cards translúcidos com blur, backdrop-filter
-- **Player centralizado**: Arte do álbum 180px, título em destaque, barra de progresso
-- **Sidebar doações**: PIX e Revolut com QR code dinâmico, alternância visual
-- **Ticker de notícias**: Música (Pitchfork, NME, Billboard) em scroll infinito
-- **Equalizador animado**: 8 barras com delays e alturas variadas
-- **Clima**: Geolocalizado (temperatura, vento, umidade)
-- **Histórico**: Últimas músicas tocadas
-- **Playing Next**: Próxima música na fila
-- **FAB Mobile**: Botão flutuante com 6 ações (PIX, Revolut, WhatsApp, Instagram, Like, Share)
-- **Guia de doação**: Overlay de 3 passos
-- **Tema**: 4 temas selecionáveis
-- **Reações**: Emojis flutuantes ao curtir
+> **Public repo:** [github.com/robcarv/azura-cast-customizations](https://github.com/robcarv/azura-cast-customizations)
 
 ---
 
-## Dependências
+## Features
 
-### Runtime (no AzuraCast)
-- AzuraCast v0.23+ (PHP 8.4, MySQL, Icecast, Liquidsoap)
-- Navegador moderno (Chrome/Firefox/Safari) com suporte a:
-  - `backdrop-filter` (CSS)
-  - `fetch` API
-  - `Intl` API (geolocalização)
+### v3.0 (Current)
+- **Glassmorphism**: Translucent cards with backdrop-filter blur
+- **Centered player**: Album art 180px, highlighted title, progress bar
+- **Dark theme**: Optimized for low-light environments
+- **Responsive**: Mobile-first layout
+- **Custom CSS injection**: Works as AzuraCast public page customization
 
-### API Externas (usadas pelo JS no browser)
-- **Open-Meteo** (clima) — gratuita, sem chave
-- **BigDataCloud** (reverse geocode) — gratuita
-- **rss2json.com** (conversão RSS) — gratuita
-- **QR Server** (geração QR code) — gratuita
+### v2.x
+- Dark theme with gradient accents
+- Custom CSS overrides for AzuraCast components
 
----
-
-## Como usar
-
-### 1. Via Dashboard do AzuraCast
-
-1. Acesse `http://seu-ip:80/admin/station/dublincalling/branding`
-2. Em **Custom CSS for Public Pages**, cole o conteúdo de `css/main.css`
-3. Em **Custom JavaScript for Public Pages**, cole o conteúdo de `js/main.js`
-4. Salve
-5. Veja o resultado em `/public/dublincalling`
-
-### 2. Via MySQL (acesso direto ao banco)
-
-```bash
-# Conectar no container
-docker exec -it azuracast php -r '
-$pdo = new PDO("mysql:host=127.0.0.1;port=3306;dbname=azuracast", "azuracast", "sua_senha_aqui");
-$stmt = $pdo->query("SELECT branding_config FROM station WHERE short_name=\"dublincalling\"");
-$config = json_decode($stmt->fetch()["branding_config"], true);
-$config["public_custom_css"] = file_get_contents("/tmp/novo_css.css");
-$update = $pdo->prepare("UPDATE station SET branding_config = ? WHERE short_name = \"dublincalling\"");
-$update->execute([json_encode($config)]);
-'
-```
+### v1.x
+- Initial theme with basic color scheme changes
 
 ---
 
-## Estrutura
+## Setup
 
-```
-azura-cast-customizations/
-├── css/
-│   ├── main.css      # Versão atual (v3)
-│   ├── v2.css        # Versão anterior
-│   └── v3.css        # Glassmorphism completo
-├── js/
-│   ├── main.js       # Versão atual (v3)
-│   ├── v2.js         # JS anterior
-│   └── v3.js         # JS completo atual
-├── docs/
-│   ├── INSTALL.md    # Instruções de instalação
-│   └── MODULES.md    # Documentação dos módulos
-├── index.html        # Página de teste standalone
-├── versions.md       # Histórico de versões
-└── README.md
-```
+1. Access your AzuraCast admin panel
+2. Navigate to **Administration > Custom Branding**
+3. Paste the CSS from `public.css` into the Custom CSS field
+4. Save and verify on the public page
 
 ---
 
-## Versões
+## Dublin Calling
 
-| Versão | Data | Descrição |
-|--------|------|-----------|
-| v3.0 | Jun 2026 | Glassmorphism, sidebar doações PIX/Revolut, ticker music news, clima, equalizador, FAB mobile |
-| v2.0 | Abr 2025 | Sidebar com doações, clima, histórico, ticker de notícias, modo escuro |
-| v1.0 | Abr 2025 | Ticker básico de notícias da Pitchfork |
-
-Veja `versions.md` para detalhes completos.
+Listen live: https://dublincalling.duckdns.org/public/dublincalling
+Request a song: https://t.me/Siteschanges_bot
 
 ---
 
-## Personalização
+## Related Projects
 
-### Configurações no JS (`js/main.js`)
+- [dashy-homelab](https://github.com/robcarv/dashy-homelab) - Dashboard with all homelab services
+- [news_colletector](https://github.com/robcarv/news_colletector) - RSS news collector with TTS
 
-No início do arquivo, ajuste o objeto `CONFIG`:
+## License
 
-```javascript
-const CONFIG = {
-    api_url: 'https://dublincalling.duckdns.org/api/nowplaying/dublincalling',
-    telegram_bot: 'https://t.me/SeuBot',
-    pix_key: 'sua-chave-pix-aqui',
-    revolut_user: 'seu-usuario',
-    whatsapp: 'https://wa.me/SEUNUMERO',
-    instagram: 'https://instagram.com/seuperfil',
-    stationName: 'Nome da Sua Radio'
-};
-```
-
-### Cores no CSS (`css/main.css`)
-
-```css
-:root {
-    --accent: #00d2d3;     /* Cor principal (cyan) */
-    --accent2: #ff6b6b;    /* Cor secundária (coral) */
-    --dark: #0a0a12;       /* Fundo escuro */
-    --glass: rgba(10, 10, 18, 0.88);  /* Glass effect */
-    --border: rgba(255,255,255,0.08);  /* Bordas */
-}
-```
-
----
-
-## GitHub
-
-```bash
-git remote -v
-origin  git@github.com:robcarv/azura-cast-customizations.git (fetch)
-origin  git@github.com:robcarv/azura-cast-customizations.git (push)
-```
+MIT
