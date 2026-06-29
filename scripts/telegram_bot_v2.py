@@ -277,10 +277,13 @@ def build_message(info: dict, lastfm: dict | None = None, mb: dict | None = None
     if not info or not info.get("title"):
         return ""
 
-    # ── Preview: Last.fm link (primeiro URL = preview rico do Telegram) ──
+    # ── Preview: Last.fm URL gera preview rico. Fallback: página da rádio ──
+    STATION_URL = "https://dublincalling.duckdns.org/public/dublincalling"
     preview = ""
     if lastfm and lastfm.get("url"):
-        preview = f"🌐 [{info['artist']} — {info['title']}]({lastfm['url']})\n\n"
+        preview = f"🎵 [{info['artist']} — {info['title']}]({lastfm['url']})\n\n"
+    else:
+        preview = f"📻 [DUBLIN CALLING — Listen Live]({STATION_URL})\n\n"
 
     # ── Header ──
     header = (
@@ -386,8 +389,8 @@ def build_message(info: dict, lastfm: dict | None = None, mb: dict | None = None
     if mb and mb.get("mb_url"):
         footer += f"\n📀 [MusicBrainz]({mb['mb_url']})"
 
-    # ── PIX support (compacto) ──
-    footer += "\n💚 *PIX:* `a8d8...f6`"
+    # ── PIX support ──
+    footer += "\n\n💚 *Ajude a rádio!* PIX: `a8d8...f6`"
 
     # ── Divider before next ──
     next_div = "\n" + "━" * 28 if next_line else ""
