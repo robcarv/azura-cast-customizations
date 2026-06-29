@@ -365,7 +365,7 @@ def build_message(info: dict, lastfm: dict | None = None, mb: dict | None = None
     if lastfm:
         raw_bio = lastfm.get("bio_summary", "")
         if raw_bio:
-            bio = clean_bio(raw_bio, max_len=180)
+            bio = clean_bio(raw_bio, max_len=120)
             if bio:
                 bio_line = f"\n\n📖 _{bio}_"
 
@@ -400,7 +400,8 @@ def build_message(info: dict, lastfm: dict | None = None, mb: dict | None = None
         footer += f"\n📀 [MusicBrainz]({mb['mb_url']})"
 
     # ── PIX support ──
-    footer += "\n\n💚 *Ajude a rádio!* PIX: `a8d87cf3-c48f-436a-acb5-7dfd0a64a7f6`"
+    footer += "\n\n🔗 [dublincalling.duckdns.org](https://dublincalling.duckdns.org/public/dublincalling)"
+    footer += "\n💚 *Ajude a rádio!* PIX: `a8d87cf3-c48f-436a-acb5-7dfd0a64a7f6`"
 
     # ── Divider before next ──
     next_div = "\n" + "━" * 28 if next_line else ""
@@ -479,7 +480,7 @@ def send_telegram(message: str, reply_markup: dict | None = None, chat_id: str |
                 files = {"photo": ("art.jpg", img_resp.content, "image/jpeg")}
                 data = {
                     "chat_id": target,
-                    "caption": message[:1000],
+                    "caption": message[:900],
                     "parse_mode": "Markdown",
                 }
                 if reply_markup:
