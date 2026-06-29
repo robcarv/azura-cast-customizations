@@ -467,7 +467,6 @@ def send_telegram(message: str, reply_markup: dict | None = None, chat_id: str |
         "chat_id": target,
         "text": message[:4000],
         "parse_mode": "Markdown",
-        "disable_web_page_preview": False,
     }
     if reply_markup:
         payload["reply_markup"] = json.dumps(reply_markup)
