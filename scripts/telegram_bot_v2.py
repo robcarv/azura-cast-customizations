@@ -350,7 +350,7 @@ def build_message(info: dict, lastfm: dict | None = None, mb: dict | None = None
     if lastfm:
         raw_bio = lastfm.get("bio_summary", "")
         if raw_bio:
-            bio = clean_bio(raw_bio, max_len=250)
+            bio = clean_bio(raw_bio, max_len=180)
             if bio:
                 bio_line = f"\n\n📖 _{bio}_"
 
@@ -385,6 +385,9 @@ def build_message(info: dict, lastfm: dict | None = None, mb: dict | None = None
         footer += f"\n🌐 [Last.fm]({lastfm['url']})"
     if mb and mb.get("mb_url"):
         footer += f"  ·  📀 [MusicBrainz]({mb['mb_url']})"
+
+    # ── PIX support (compacto) ──
+    footer += "\n💚 *PIX:* `a8d8...f6`"
 
     # ── Divider before next ──
     next_div = "\n" + "━" * 28 if next_line else ""
@@ -431,6 +434,12 @@ def build_inline_keyboard(lastfm_url: str = "", mb_url: str = "") -> dict:
     if second_row:
         buttons.append(second_row)
 
+    # Support button
+    QR_PIX = "https://raw.githubusercontent.com/robcarv/azura-cast-customizations/main/assets/pix_qr.png"
+    buttons.append([
+        {"text": "💚 Support (PIX)", "url": QR_PIX},
+    ])
+
     return {"inline_keyboard": buttons}
 
 
@@ -463,16 +472,27 @@ def send_telegram(message: str, reply_markup: dict | None = None, chat_id: str |
     if reply_markup:
         payload["reply_markup"] = json.dumps(reply_markup)
 
-    # Tenta sendPhoto se tiver capa — imagem grande + legenda rica
+    # Tenta sendPhoto se tiver capa — baixa localmente e faz upload
     if photo_url:
-        payload["photo"] = photo_url
-        payload["caption"] = caption
-        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
         try:
-            resp = requests.post(url, data=payload, timeout=15)
-            resp.raise_for_status()
-            log.info(f"✅ Foto+legenda enviada para {target}")
-            return True
+            # Baixa a imagem (tenta HTTPS público, fallback IP local)
+            img_resp = requests.get(photo_url, timeout=10)
+            if img_resp.status_code != 200:
+                # Fallback: IP local (Telegram não acessa, mas nós baixamos)
+                local_url = photo_url.replace("dublincalling.duckdns.org", "192.168.68.108").replace("https", "http")
+                img_resp = requests.get(local_url, timeout=10, verify=False)
+            if img_resp.status_code == 200 and len(img_resp.content) > 100:
+                files = {"photo": ("art.jpg", img_resp.content, "image/jpeg")}
+                data = {"chat_id": target, "caption": caption, "parse_mode": "Markdown"}
+                if reply_markup:
+                    data["reply_markup"] = json.dumps(reply_markup)
+                resp = requests.post(
+                    f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto",
+                    data=data, files=files, timeout=20
+                )
+                resp.raise_for_status()
+                log.info(f"✅ Foto+legenda enviada para {target}")
+                return True
         except Exception as e:
             log.warning(f"sendPhoto falhou ({e}), tentando sendMessage...")
 
