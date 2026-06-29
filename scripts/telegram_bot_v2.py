@@ -473,26 +473,43 @@ def send_telegram(message: str, reply_markup: dict | None = None, chat_id: str |
         payload["reply_markup"] = json.dumps(reply_markup)
 
     # Tenta sendPhoto se tiver capa — baixa localmente e faz upload
+    FALLBACK_IMG = "/home/robert/Documents/vscode_projects/news_colletector/onair_fallback.png"
+    img_content = None
+
     if photo_url:
         try:
-            # Baixa a imagem (tenta HTTPS público, fallback IP local)
+            # Tenta baixar do AzuraCast (HTTPS público)
             img_resp = requests.get(photo_url, timeout=10)
             if img_resp.status_code != 200:
-                # Fallback: IP local (Telegram não acessa, mas nós baixamos)
+                # Fallback: IP local
                 local_url = photo_url.replace("dublincalling.duckdns.org", "192.168.68.108").replace("https", "http")
                 img_resp = requests.get(local_url, timeout=10, verify=False)
-            if img_resp.status_code == 200 and len(img_resp.content) > 100:
-                files = {"photo": ("art.jpg", img_resp.content, "image/jpeg")}
-                data = {"chat_id": target, "caption": caption, "parse_mode": "Markdown"}
-                if reply_markup:
-                    data["reply_markup"] = json.dumps(reply_markup)
-                resp = requests.post(
-                    f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto",
-                    data=data, files=files, timeout=20
-                )
-                resp.raise_for_status()
-                log.info(f"✅ Foto+legenda enviada para {target}")
-                return True
+            if img_resp.status_code == 200 and len(img_resp.content) > 500:
+                img_content = img_resp.content
+        except Exception:
+            pass
+
+    # Fallback: imagem ON AIR se a capa falhou
+    if not img_content and os.path.exists(FALLBACK_IMG):
+        try:
+            with open(FALLBACK_IMG, "rb") as f:
+                img_content = f.read()
+        except Exception:
+            pass
+
+    if img_content:
+        try:
+            files = {"photo": ("art.jpg", img_content, "image/jpeg")}
+            data = {"chat_id": target, "caption": caption, "parse_mode": "Markdown"}
+            if reply_markup:
+                data["reply_markup"] = json.dumps(reply_markup)
+            resp = requests.post(
+                f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto",
+                data=data, files=files, timeout=20
+            )
+            resp.raise_for_status()
+            log.info(f"✅ Foto+legenda enviada para {target}")
+            return True
         except Exception as e:
             log.warning(f"sendPhoto falhou ({e}), tentando sendMessage...")
 
