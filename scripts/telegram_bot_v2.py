@@ -49,8 +49,8 @@ if _env_path.exists():
     except ImportError:
         pass
 
-TELEGRAM_TOKEN = os.getenv("BOT_TOKEN", "")
-TELEGRAM_CHAT_ID = os.getenv("CHAT_ID")
+TELEGRAM_TOKEN = os.getenv("DUBLIN_BOT_TOKEN") or os.getenv("BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("DUBLIN_CHAT_ID") or os.getenv("CHAT_ID")
 # Channel/grupo opcional (envia em paralelo)
 TELEGRAM_CHANNEL_ID = os.getenv("CHANNEL_ID", "")
 
