@@ -131,37 +131,68 @@ def extract_info(np_data: dict) -> dict | None:
 
 
 def search_lastfm(artist: str, title: str) -> dict:
-    """Busca metadados no Last.fm."""
+    """Busca metadados no Last.fm com fallbacks para tags e bio."""
+    result = {}
+    api = "https://ws.audioscrobbler.com/2.0/"
+
     try:
-        params = {
-            "method": "track.getInfo",
-            "api_key": LASTFM_API_KEY,
-            "artist": artist,
-            "track": title,
-            "format": "json",
-            "autocorrect": 1,
-        }
-        resp = requests.get("https://ws.audioscrobbler.com/2.0/", params=params, timeout=10)
+        # 1. Track info (playcount, listeners, url, tags)
+        resp = requests.get(api, params={
+            "method": "track.getInfo", "api_key": LASTFM_API_KEY,
+            "artist": artist, "track": title,
+            "format": "json", "autocorrect": 1,
+        }, timeout=10)
         data = resp.json()
         track = data.get("track", {})
         if not track:
             return {}
 
+        result["listeners"] = track.get("listeners", "")
+        result["playcount"] = track.get("playcount", "")
+        result["url"] = track.get("url", "")
+
+        # Tags do track
+        toptags = track.get("toptags", {})
+        tags_list = toptags.get("tag", []) if isinstance(toptags, dict) else []
+        result["tags"] = [t.get("name", "") for t in tags_list[:8] if isinstance(t, dict)]
+
+        # Bio resumida
         artist_info = track.get("artist", {})
         bio_data = artist_info.get("bio", {}) if isinstance(artist_info, dict) else {}
         summary = bio_data.get("summary", "") if isinstance(bio_data, dict) else ""
+        result["bio_summary"] = summary if summary else ""
 
-        toptags = track.get("toptags", {})
-        tags_list = toptags.get("tag", []) if isinstance(toptags, dict) else []
-        tags = [t.get("name", "") for t in tags_list[:6] if isinstance(t, dict)]
+        # 2. Fallback: tags do artista (se track não tem tags)
+        if not result["tags"]:
+            try:
+                resp2 = requests.get(api, params={
+                    "method": "artist.getTopTags", "api_key": LASTFM_API_KEY,
+                    "artist": artist, "format": "json", "autocorrect": 1,
+                }, timeout=8)
+                d2 = resp2.json()
+                atags = d2.get("toptags", {}).get("tag", [])
+                result["tags"] = [t.get("name", "") for t in atags[:6] if isinstance(t, dict)]
+            except Exception:
+                pass
 
-        return {
-            "listeners": track.get("listeners", ""),
-            "playcount": track.get("playcount", ""),
-            "tags": tags,
-            "bio_summary": summary,
-            "url": track.get("url", ""),
-        }
+        # 3. Fallback: bio completa do artista (se track não tem)
+        if not result["bio_summary"]:
+            try:
+                resp3 = requests.get(api, params={
+                    "method": "artist.getInfo", "api_key": LASTFM_API_KEY,
+                    "artist": artist, "format": "json", "autocorrect": 1, "lang": "en",
+                }, timeout=8)
+                d3 = resp3.json()
+                artist_data = d3.get("artist", {})
+                bio = artist_data.get("bio", {}) if isinstance(artist_data, dict) else {}
+                result["bio_summary"] = bio.get("summary", "") if isinstance(bio, dict) else ""
+                # Similar artists
+                similar = artist_data.get("similar", {}).get("artist", []) if isinstance(artist_data, dict) else []
+                result["similar"] = [s.get("name", "") for s in similar[:3] if isinstance(s, dict)]
+            except Exception:
+                pass
+
+        return result
     except Exception as e:
         log.debug(f"Last.fm error: {e}")
         return {}
@@ -319,9 +350,28 @@ def build_message(info: dict, lastfm: dict | None = None, mb: dict | None = None
     if lastfm:
         raw_bio = lastfm.get("bio_summary", "")
         if raw_bio:
-            bio = clean_bio(raw_bio)
+            bio = clean_bio(raw_bio, max_len=250)
             if bio:
                 bio_line = f"\n\n📖 _{bio}_"
+
+    # ── Similar artists ──
+    similar_line = ""
+    if lastfm:
+        similar = lastfm.get("similar", [])
+        if similar:
+            similar_line = f"\n🔗 *Similar:* {', '.join(similar)}"
+
+    # ── MusicBrainz detail ──
+    mb_line = ""
+    if mb:
+        mb_country = mb.get("country", "")
+        mb_year = mb.get("release_year", "")
+        if mb_country or mb_year:
+            mb_line = "\n📀 "
+            if mb_year:
+                mb_line += f"Released {mb_year}"
+            if mb_country:
+                mb_line += f" ({mb_country})"
 
     # ── Footer ──
     footer = (
@@ -354,6 +404,8 @@ def build_message(info: dict, lastfm: dict | None = None, mb: dict | None = None
         + ("\n" + stats_line if stats_line else "")
         + "\n" + detail_line
         + bio_line
+        + similar_line
+        + mb_line
         + next_div
         + "\n"
         + next_line
