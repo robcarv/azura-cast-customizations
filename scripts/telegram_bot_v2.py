@@ -151,6 +151,16 @@ def search_lastfm(artist: str, title: str) -> dict:
         result["playcount"] = track.get("playcount", "")
         result["url"] = track.get("url", "")
 
+        # Album art do Last.fm (maior tamanho disponível)
+        album = track.get("album", {})
+        images = album.get("image", []) if isinstance(album, dict) else []
+        result["art_url"] = ""
+        for img in images:
+            if img.get("size") == "extralarge":
+                result["art_url"] = img.get("#text", "")
+        if not result["art_url"] and images:
+            result["art_url"] = images[-1].get("#text", "")
+
         # Tags do track
         toptags = track.get("toptags", {})
         tags_list = toptags.get("tag", []) if isinstance(toptags, dict) else []
@@ -448,10 +458,9 @@ def build_inline_keyboard(lastfm_url: str = "", mb_url: str = "") -> dict:
 
 # ─── TELEGRAM SEND ─────────────────────────────────────────────────────────
 
-def send_telegram(message: str, reply_markup: dict | None = None, chat_id: str | None = None) -> bool:
-    """Envia mensagem para o Telegram. Link preview gera capa + descrição automaticamente."""
+def send_telegram(message: str, reply_markup: dict | None = None, chat_id: str | None = None, art_url: str = "") -> bool:
+    """Envia via sendPhoto (capa do Last.fm) ou sendMessage (fallback)."""
     if not message:
-        log.warning("Mensagem vazia")
         return False
     if not TELEGRAM_TOKEN:
         log.error("BOT_TOKEN não configurado")
@@ -462,6 +471,30 @@ def send_telegram(message: str, reply_markup: dict | None = None, chat_id: str |
         log.error("CHAT_ID não configurado")
         return False
 
+    # Tenta sendPhoto com capa do Last.fm
+    if art_url:
+        try:
+            img_resp = requests.get(art_url, timeout=15)
+            if img_resp.status_code == 200 and len(img_resp.content) > 500:
+                files = {"photo": ("art.jpg", img_resp.content, "image/jpeg")}
+                data = {
+                    "chat_id": target,
+                    "caption": message[:1000],
+                    "parse_mode": "Markdown",
+                }
+                if reply_markup:
+                    data["reply_markup"] = json.dumps(reply_markup)
+                resp = requests.post(
+                    f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto",
+                    data=data, files=files, timeout=20
+                )
+                resp.raise_for_status()
+                log.info(f"✅ Foto+legenda enviada para {target}")
+                return True
+        except Exception as e:
+            log.warning(f"sendPhoto falhou: {e}")
+
+    # Fallback: sendMessage
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     payload = {
         "chat_id": target,
@@ -560,11 +593,12 @@ def process(force: bool = False, dry_run: bool = False) -> bool:
         return True
 
     # 5. Enviar
-    ok = send_telegram(msg, reply_markup=keyboard)
+    art_url = lastfm.get("art_url", "")
+    ok = send_telegram(msg, reply_markup=keyboard, art_url=art_url)
 
     # Envia também para o canal (se configurado)
     if ok and TELEGRAM_CHANNEL_ID:
-        send_telegram(msg, reply_markup=keyboard, chat_id=TELEGRAM_CHANNEL_ID)
+        send_telegram(msg, reply_markup=keyboard, chat_id=TELEGRAM_CHANNEL_ID, art_url=art_url)
 
     return ok
 
