@@ -436,8 +436,8 @@ def build_inline_keyboard(lastfm_url: str = "", mb_url: str = "") -> dict:
 
 # ─── TELEGRAM SEND ─────────────────────────────────────────────────────────
 
-def send_telegram(message: str, reply_markup: dict | None = None, chat_id: str | None = None) -> bool:
-    """Envia mensagem para o Telegram com suporte a inline keyboard."""
+def send_telegram(message: str, reply_markup: dict | None = None, chat_id: str | None = None, photo_url: str = "") -> bool:
+    """Envia mensagem para o Telegram. Usa sendPhoto se tiver capa (imagem grande + legenda)."""
     if not message:
         log.warning("Mensagem vazia")
         return False
@@ -450,21 +450,38 @@ def send_telegram(message: str, reply_markup: dict | None = None, chat_id: str |
         log.error("CHAT_ID não configurado")
         return False
 
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-
-    # Limita tamanho (Telegram cap: 4096)
-    if len(message) > 4000:
-        message = message[:3997] + "..."
+    # Limita tamanho (Telegram caption cap: 1024 chars)
+    caption = message
+    if len(caption) > 1000:
+        caption = caption[:997] + "..."
 
     payload = {
         "chat_id": target,
-        "text": message,
         "parse_mode": "Markdown",
-        "disable_web_page_preview": False,
     }
 
     if reply_markup:
         payload["reply_markup"] = json.dumps(reply_markup)
+
+    # Tenta sendPhoto se tiver capa — imagem grande + legenda rica
+    if photo_url:
+        payload["photo"] = photo_url
+        payload["caption"] = caption
+        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
+        try:
+            resp = requests.post(url, data=payload, timeout=15)
+            resp.raise_for_status()
+            log.info(f"✅ Foto+legenda enviada para {target}")
+            return True
+        except Exception as e:
+            log.warning(f"sendPhoto falhou ({e}), tentando sendMessage...")
+
+    # Fallback: sendMessage (texto normal com preview)
+    payload.pop("photo", None)
+    payload.pop("caption", None)
+    payload["text"] = message[:3997] + ("..." if len(message) > 4000 else "")
+    payload["disable_web_page_preview"] = "false"
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
 
     try:
         resp = requests.post(url, data=payload, timeout=15)
@@ -555,11 +572,12 @@ def process(force: bool = False, dry_run: bool = False) -> bool:
         return True
 
     # 5. Enviar
-    ok = send_telegram(msg, reply_markup=keyboard)
+    photo_url = info.get("art", "")
+    ok = send_telegram(msg, reply_markup=keyboard, photo_url=photo_url)
 
     # Envia também para o canal (se configurado)
     if ok and TELEGRAM_CHANNEL_ID:
-        send_telegram(msg, reply_markup=keyboard, chat_id=TELEGRAM_CHANNEL_ID)
+        send_telegram(msg, reply_markup=keyboard, chat_id=TELEGRAM_CHANNEL_ID, photo_url=photo_url)
 
     return ok
 
