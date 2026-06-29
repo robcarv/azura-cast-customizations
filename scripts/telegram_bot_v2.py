@@ -262,7 +262,8 @@ def build_message(info: dict, lastfm: dict | None = None, mb: dict | None = None
 
     # ── Song + artist ──
     song_line = f"\n🎵 *{info['title']}*"
-    artist_line = f"👤 _{info['artist']}_{live_badge}"
+    artist_display = info['artist'] if info['artist'] else 'Unknown Artist'
+    artist_line = f"👤 _{artist_display}_{live_badge}"
 
     # ── Album ──
     album_line = ""
