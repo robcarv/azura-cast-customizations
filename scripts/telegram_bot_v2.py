@@ -283,8 +283,17 @@ def build_message(info: dict, lastfm: dict | None = None, mb: dict | None = None
         if playcount:
             stats_line = f"📊 {fmt_count(playcount)} plays · {fmt_count(listeners)} listeners"
 
+    # ── Next song (precisa vir antes do divider) ──
+    next_line = ""
+    if info.get("next_title"):
+        next_artist = info.get("next_artist", "")
+        if next_artist:
+            next_line = f"⏭️  *Next:* {next_artist} — {info['next_title']}"
+        else:
+            next_line = f"⏭️  *Next:* {info['next_title']}"
+
     # ── Divider ──
-    mid_div = "\n" + "━" * 28 if tags_line or stats_line else ""
+    mid_div = "\n" + "━" * 28 if (tags_line or stats_line) and not next_line else ""
 
     # ── Year / Duration / Genre / Playlist / Listeners ──
     year = info.get("year", "")
@@ -312,13 +321,6 @@ def build_message(info: dict, lastfm: dict | None = None, mb: dict | None = None
             bio = clean_bio(raw_bio)
             if bio:
                 bio_line = f"\n\n📖 _{bio}_"
-
-    # ── Next song ──
-    next_line = ""
-    if info.get("next_title"):
-        next_line = (
-            f"⏭️  *Next:* {info.get('next_artist', '???')} — {info['next_title']}"
-        )
 
     # ── Footer ──
     footer = (
@@ -476,14 +478,14 @@ def process(force: bool = False, dry_run: bool = False) -> bool:
 
     log.info(f"🎵 Nova: {song_key(info)}")
 
-    # 3. Enriquecer metadados
+    # 3. Enriquecer metadados (sempre, exceto no --test que usa dados fixos)
     lastfm = {}
     mb = {}
-    if not dry_run:
+    if LASTFM_API_KEY:
         log.info("🔍 Last.fm...")
         lastfm = search_lastfm(info["artist"], info["title"])
-        log.info("🔍 MusicBrainz...")
-        mb = search_musicbrainz(info["artist"], info["title"])
+    log.info("🔍 MusicBrainz...")
+    mb = search_musicbrainz(info["artist"], info["title"])
 
     # 4. Montar mensagem + keyboard
     msg = build_message(info, lastfm, mb)
