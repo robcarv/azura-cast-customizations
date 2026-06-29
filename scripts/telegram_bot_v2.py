@@ -400,7 +400,7 @@ def build_message(info: dict, lastfm: dict | None = None, mb: dict | None = None
         footer += f"\n📀 [MusicBrainz]({mb['mb_url']})"
 
     # ── PIX support ──
-    footer += "\n\n💚 *Ajude a rádio!* PIX: `a8d8...f6`"
+    footer += "\n\n💚 *Ajude a rádio!* PIX: `a8d87cf3-c48f-436a-acb5-7dfd0a64a7f6`"
 
     # ── Divider before next ──
     next_div = "\n" + "━" * 28 if next_line else ""
