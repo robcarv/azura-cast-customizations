@@ -101,3 +101,11 @@ nohup python3 telegram_bot_v2.py --daemon >> /tmp/azura-v2.log 2>&1 &
 | Sem tags/bio | Sem LASTFM_API_KEY | Registrar em last.fm/api/account/create |
 | Duplicatas | Webhook antigo ainda ativo | Desabilitar triggers no AzuraCast |
 | `last_song` cache sujo | /tmp/azura_cache_v2.json corrompido | `rm /tmp/azura_cache_v2.json` |
+
+## Sanitização de Segurança
+
+- `BOT_TOKEN`: lido de `DUBLIN_BOT_TOKEN` ou `BOT_TOKEN` no `.env` — nunca hardcoded
+- `LASTFM_API_KEY`: lido de `LASTFM_API_KEY` no `.env`
+- `PIX_KEY`: lido de `PIX_KEY` no `.env` (fallback público — chave de recebimento, não é secret)
+- Erros de rede: log mostra apenas `type(e).__name__`, nunca a URL completa com token
+- Todas as URLs públicas (estação, QR code) são constantes documentadas no topo do script

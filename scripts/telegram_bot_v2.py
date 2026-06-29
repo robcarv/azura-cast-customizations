@@ -61,11 +61,15 @@ CACHE_FILE = Path("/tmp/azura_cache_v2.json")
 # Depois coloque LASTFM_API_KEY=xxx no arquivo .env
 LASTFM_API_KEY = os.getenv("LASTFM_API_KEY", "")
 
-# Links
+# Links (públicos — sem secrets)
 LISTEN_URL = f"{AZURACAST_URL}/listen/{STATION_SHORT}/radio.mp3"
 REQUEST_BOT = "https://t.me/Siteschanges_bot"
+STATION_URL = "https://dublincalling.duckdns.org/public/dublincalling"
 STATION_NAME = "DUBLIN CALLING"
 STATION_FLAG = "🇮🇪"
+# PIX key (chave pública de recebimento — não é secret, é pra ser compartilhada)
+PIX_KEY = os.getenv("PIX_KEY", "a8d87cf3-c48f-436a-acb5-7dfd0a64a7f6")
+QR_PIX_URL = "https://raw.githubusercontent.com/robcarv/azura-cast-customizations/main/assets/pix_qr.png"
 
 # ─── LOGGING ───────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -288,7 +292,6 @@ def build_message(info: dict, lastfm: dict | None = None, mb: dict | None = None
         return ""
 
     # ── Preview: Last.fm URL gera preview rico. Fallback: página da rádio ──
-    STATION_URL = "https://dublincalling.duckdns.org/public/dublincalling"
     preview = ""
     if lastfm and lastfm.get("url"):
         preview = f"🎵 [{info['artist']} — {info['title']}]({lastfm['url']})\n\n"
@@ -400,8 +403,8 @@ def build_message(info: dict, lastfm: dict | None = None, mb: dict | None = None
         footer += f"\n📀 [MusicBrainz]({mb['mb_url']})"
 
     # ── PIX support ──
-    footer += "\n\n🔗 [dublincalling.duckdns.org](https://dublincalling.duckdns.org/public/dublincalling)"
-    footer += "\n💚 *Ajude a rádio!* PIX: `a8d87cf3-c48f-436a-acb5-7dfd0a64a7f6`"
+    footer += f"\n\n🔗 [dublincalling.duckdns.org]({STATION_URL})"
+    footer += f"\n💚 *Ajude a rádio!* PIX: `{PIX_KEY}`"
 
     # ── Divider before next ──
     next_div = "\n" + "━" * 28 if next_line else ""
@@ -449,9 +452,8 @@ def build_inline_keyboard(lastfm_url: str = "", mb_url: str = "") -> dict:
         buttons.append(second_row)
 
     # Support button
-    QR_PIX = "https://raw.githubusercontent.com/robcarv/azura-cast-customizations/main/assets/pix_qr.png"
     buttons.append([
-        {"text": "💚 Support (PIX)", "url": QR_PIX},
+        {"text": "💚 Support (PIX)", "url": QR_PIX_URL},
     ])
 
     return {"inline_keyboard": buttons}
@@ -511,7 +513,7 @@ def send_telegram(message: str, reply_markup: dict | None = None, chat_id: str |
         log.info(f"✅ Enviado para chat {target}")
         return True
     except Exception as e:
-        log.error(f"❌ Erro Telegram ({target}): {e}")
+        log.error(f"❌ Erro Telegram ({target}): {type(e).__name__}")
         return False
 
 
