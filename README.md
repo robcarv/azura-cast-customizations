@@ -9,7 +9,13 @@ Designed for **Dublin Calling** radio station, running on Raspberry Pi 5 with Do
 
 ## Features
 
-### v3.0 (Current)
+### v4.0 (Current)
+- **Telegram Bot v2**: Interactive notifications with inline keyboard
+- **Rich metadata**: Last.fm tags/playcount/bio + MusicBrainz links
+- **Album art preview**: Visible in Telegram via zero-width space trick
+- **Live listener count**: From AzuraCast API
+
+### v3.0
 - **Glassmorphism**: Translucent cards with backdrop-filter blur
 - **Centered player**: Album art 180px, highlighted title, progress bar
 - **Dark theme**: Optimized for low-light environments

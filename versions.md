@@ -1,5 +1,20 @@
 # Histórico de Versões
 
+## v4.0 - Jun 2026
+### Adicionado
+- Telegram Bot v2: mensagens interativas com inline keyboard
+- Metadados do Last.fm (tags, playcount, bio do artista)
+- Metadados do MusicBrainz (ano, país, link)
+- Graceful degradation (sem API key = omite seções)
+- Cache local (/tmp/azura_cache_v2.json) anti-duplicatas
+- Preview da capa do álbum no Telegram
+- Modo daemon (polling 10s) + one-shot (cron)
+
+### Alterado
+- Substitui o webhook básico + script antigo por uma única mensagem rica
+- Formatação mais compacta e informativa
+- Inline keyboard com botões: Listen Live, Request, Last.fm, MusicBrainz
+
 ## v3.0 - Jun 2026
 ### Adicionado
 - Glassmorphism completo (blur, bordas sutis, cards translúcidos)
